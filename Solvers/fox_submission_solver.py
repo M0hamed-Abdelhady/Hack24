@@ -1,5 +1,6 @@
 import requests
 import numpy as np
+import LSBSteg
 from LSBSteg import SteganographyException
 from riddle_solvers import *
 
@@ -51,7 +52,7 @@ def generate_message_array(message, image_carrier) -> np.array:
         3. Decide what 3 chunks you will send in each turn in the 3 channels & what is their entities (F,R,E)
         4. Encode each chunk in the image carrier
     """
-    encoded_np_image = encode(np.array(image_carrier), message)
+    encoded_np_image = LSBSteg.encode(np.array(image_carrier), message)
     return np.array(encoded_np_image)
 
 
