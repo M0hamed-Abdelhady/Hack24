@@ -1,3 +1,9 @@
+import copy
+import json
+import sys
+import warnings
+from time import sleep
+
 import requests
 import numpy as np
 import LSBSteg
@@ -6,7 +12,7 @@ from riddle_solvers import *
 
 api_base_url = "http://3.70.97.142:5000"
 team_id = "kNgGFJe"
-msg = "Unseen data revealed"
+warnings.filterwarnings("ignore")
 
 
 def init_fox(team_id):
@@ -17,29 +23,36 @@ def init_fox(team_id):
     """
     response = requests.post(api_base_url + "/fox/start", json={"teamId": team_id})
     response_data = response.json()
-    msg = response_data["msg"]
-    print(f"Message: {msg}")
-    return np.array(response_data["carrier_image"])
+    message = response_data["msg"]
+    print(f"Message: {message}")
+    return [np.array(response_data["carrier_image"]), message]
 
 
 def solving_problems():
     current_fake = 0
     test_case = get_riddle(team_id, "problem_solving_easy")
     sol = solve_problem_solving_easy(test_case)
+    sleep(0.5)
     if solve_riddle(team_id, sol):
         current_fake += 1
+
     test_case = get_riddle(team_id, "problem_solving_medium")
     sol = solve_problem_solving_medium(test_case)
+    sleep(0.5)
     if solve_riddle(team_id, sol):
         current_fake += 2
+
     test_case = get_riddle(team_id, "problem_solving_hard")
     sol = solve_problem_solving_hard(test_case)
+    sleep(0.5)
     if solve_riddle(team_id, sol):
         current_fake += 3
-    test_case = get_riddle(team_id, "sec_medium_stegano")
-    sol = solve_sec_medium(test_case)
-    if solve_riddle(team_id, sol):
-        current_fake += 2
+
+    # test_case = get_riddle(team_id, "sec_medium_stegano")
+    # sol = solve_sec_medium(test_case)
+    # sleep(0.5)
+    # if solve_riddle(team_id, sol):
+    #     current_fake += 2
     return current_fake
 
 
@@ -72,7 +85,7 @@ def get_riddle(team_id, riddle_id):
     )
     if response.status_code == 200:
         response_data = response.json()
-        print(f"get_riddle: {response_data}")
+        # print(f"get_riddle: {response_data}")
         return response_data["test_case"]
     else:
         print(f"get_riddle: {response.status_code} | {response.text}")
@@ -108,13 +121,14 @@ def send_message(
     You will need to send the message (images) in each of the 3 channels along with their entites.
     Refer to the API documentation to know more about what needs to be send in this api call.
     """
+
     response = requests.post(
         api_base_url + "/fox/send-message",
         json={
             "teamId": team_id,
             "messages": [messages[0].tolist(), messages[1].tolist(), messages[2].tolist()],
             "message_entities": message_entities,
-        },
+        }
     )
     if response.status_code == 200:
         res_data = response.json()
@@ -155,47 +169,62 @@ def submit_fox_attempt(team_id):
         1. You HAVE to start and end the game on your own. The time between the starting and ending the game is taken into the scoring function
         2. You can send in the 3 channels any combination of F(Fake),R(Real),E(Empty) under the conditions that
             2.a. At most one real message is sent
-            2.b. You cannot send 3 E(Empty) messages, there should be atleast R(Real)/F(Fake)
+            2.b. You cannot send 3 E(Empty) messages, there should be at least R(Real)/F(Fake)
         3. Refer To the documentation to know more about the API handling
     """
-    carrier_image = init_fox(team_id)
-    # print(carrier_image)
-    with open('output.txt', 'w') as file:
-        file.write(str(carrier_image.tolist()))
-        file.write('\n')
-        file.write(msg)
-    current_fake = solving_problems()
-    real_msg_channel = [0, 2, 1, 0, 1]
-    chunks = 1
-    l, r = 0, 4
-    encoded_msg = generate_message_array(
-        message=msg, image_carrier=carrier_image
-    )
+    with open('output.txt', 'w') as f:
+        sys.stdout = f
+        # tmp = init_fox(team_id)
+        carrier_image, msg = tmp[0], tmp[1]
+        real_0 = copy.deepcopy(carrier_image)
+        real_1 = copy.deepcopy(carrier_image)
+        fake_0 = copy.deepcopy(carrier_image)
+        fake_1 = copy.deepcopy(carrier_image)
 
-    # empty_message = generate_message_array(message="o", image_carrier=carrier_image)
-    fake_message = generate_message_array(message="oo", image_carrier=carrier_image)
+        # print(carrier_image)
+        print(str(carrier_image.tolist()))
+        print('\n\n')
+        print(msg)
 
-    messages = [np.array(encoded_msg), np.array(fake_message), np.array(carrier_image)]
-    channels = ["R", "F", "E"]
-    send_message(team_id, messages=messages, message_entities=channels)
+        current_fake = solving_problems()
+        real_msg_channel = [0, 2, 1, 0, 1]
+        chunks = 1
+        l, r = 0, 4
 
-    # for i in range(chunks):
-    #     encoded_msg = generate_message_array(
-    #         message=msg, image_carrier=carrier_image
-    #     )
-    #     messages = [0] * 3
-    #     channels = ["0"] * 3
-    #     l += 4
-    #     r += 4
-    #     messages[real_msg_channel[i]] = encoded_msg
-    #     channels[real_msg_channel[i]] = "R"
-    #     for j in range(3):
-    #         if j == real_msg_channel[i]:
-    #             continue
-    #         messages[j] = carrier_image
-    #         channels[j] = "E"
-    #     send_message(team_id, messages=messages, message_entities=channels)
-    end_fox(team_id)
+        real_message_0 = generate_message_array(message=msg[:10], image_carrier=real_0)
+        real_message_1 = generate_message_array(message=msg[10:], image_carrier=real_1)
+        fake_message_0 = generate_message_array(message="fake", image_carrier=fake_0)
+        fake_message_1 = generate_message_array(message="fake", image_carrier=fake_1)
+
+        messages = [np.array(real_message_0), np.array(fake_message_0), np.array(fake_message_1)]
+        channels = ["R", "F", "F"]
+        send_message(team_id, messages=messages, message_entities=channels)
+
+        messages = []
+        channels = []
+        messages = [np.array(fake_message_0), np.array(real_message_1), np.array(fake_message_1)]
+        channels = ["F", "R", "E"]
+        send_message(team_id, messages=messages, message_entities=channels)
+
+        # for i in range(chunks):
+        #     encoded_msg = generate_message_array(
+        #         message=msg, image_carrier=carrier_image
+        #     )
+        #     messages = [0] * 3
+        #     channels = ["0"] * 3
+        #     l += 4
+        #     r += 4
+        #     messages[real_msg_channel[i]] = encoded_msg
+        #     channels[real_msg_channel[i]] = "R"
+        #     for j in range(3):
+        #         if j == real_msg_channel[i]:
+        #             continue
+        #         messages[j] = carrier_image
+        #         channels[j] = "E"
+        #     send_message(team_id, messages=messages, message_entities=channels)
+        end_fox(team_id)
+    sys.stdout = sys.__stdout__
 
 
 submit_fox_attempt(team_id)
+print("Finished!")

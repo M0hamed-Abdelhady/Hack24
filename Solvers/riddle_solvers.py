@@ -16,7 +16,7 @@ def solve_sec_medium(input: torch.Tensor) -> str:
     str: A string representing the decoded message from the image.
     """
     dec = utils.decode(img)
-    print(f"solve_sec_medium: {dec}")
+    print(f"solved_sec")
     return dec
 
 
