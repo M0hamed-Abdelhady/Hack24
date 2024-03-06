@@ -3,10 +3,9 @@ import json
 import sys
 import warnings
 from time import sleep
-
 import requests
 import numpy as np
-import LSBSteg
+import LSBSteg as LSBSteg
 from LSBSteg import SteganographyException
 from riddle_solvers import *
 
@@ -48,11 +47,11 @@ def solving_problems():
     if solve_riddle(team_id, sol):
         current_fake += 3
 
-    # test_case = get_riddle(team_id, "sec_medium_stegano")
-    # sol = solve_sec_medium(test_case)
-    # sleep(0.5)
-    # if solve_riddle(team_id, sol):
-    #     current_fake += 2
+    test_case = get_riddle(team_id, "sec_medium_stegano")
+    sol = solve_sec_medium(test_case)
+    sleep(0.5)
+    if solve_riddle(team_id, sol):
+        current_fake += 2
     return current_fake
 
 
@@ -174,12 +173,12 @@ def submit_fox_attempt(team_id):
     """
     with open('output.txt', 'w') as f:
         sys.stdout = f
-        # tmp = init_fox(team_id)
+        tmp = init_fox(team_id)
         carrier_image, msg = tmp[0], tmp[1]
         real_0 = copy.deepcopy(carrier_image)
         real_1 = copy.deepcopy(carrier_image)
+        real_2 = copy.deepcopy(carrier_image)
         fake_0 = copy.deepcopy(carrier_image)
-        fake_1 = copy.deepcopy(carrier_image)
 
         # print(carrier_image)
         print(str(carrier_image.tolist()))
@@ -191,19 +190,25 @@ def submit_fox_attempt(team_id):
         chunks = 1
         l, r = 0, 4
 
-        real_message_0 = generate_message_array(message=msg[:10], image_carrier=real_0)
-        real_message_1 = generate_message_array(message=msg[10:], image_carrier=real_1)
-        fake_message_0 = generate_message_array(message="fake", image_carrier=fake_0)
-        fake_message_1 = generate_message_array(message="fake", image_carrier=fake_1)
+        real_message_0 = generate_message_array(message=msg[:7], image_carrier=real_0)
+        real_message_1 = generate_message_array(message=msg[7:14], image_carrier=real_1)
+        real_message_2 = generate_message_array(message=msg[14:], image_carrier=real_2)
+        fake_message_0 = generate_message_array(message="faka", image_carrier=fake_0)
 
-        messages = [np.array(real_message_0), np.array(fake_message_0), np.array(fake_message_1)]
+        messages = [np.array(real_message_0), np.array(fake_message_0), np.array(fake_message_0)]
         channels = ["R", "F", "F"]
         send_message(team_id, messages=messages, message_entities=channels)
 
         messages = []
         channels = []
-        messages = [np.array(fake_message_0), np.array(real_message_1), np.array(fake_message_1)]
-        channels = ["F", "R", "E"]
+        messages = [np.array(fake_message_0), np.array(real_message_1), np.array(fake_message_0)]
+        channels = ["F", "R", "F"]
+        send_message(team_id, messages=messages, message_entities=channels)
+
+        messages = []
+        channels = []
+        messages = [np.array(fake_message_0), np.array(real_message_2), np.array(fake_message_0)]
+        channels = ["F", "R", "F"]
         send_message(team_id, messages=messages, message_entities=channels)
 
         # for i in range(chunks):

@@ -8,7 +8,6 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "d:/Projects/HackTrick24/dlls",
       "program": "d:/Projects/HackTrick24/dlls/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
